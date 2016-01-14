@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
+		<link rel="stylesheet" href="css/bootstrap-theme.min.css" type="text/css">
+		<style>
+		.vertical {
+			display: inline-block;
+			width: 80%;
+			height: 30px;
+			-webkit-transform: rotate(-90deg);
+			transform: rotate(-90deg);
+			box-shadow: inset 0px 4px 6px #ccc;
+		}
+
+		.progress-bar {
+			box-shadow: inset 0px 4px 6px rgba(100,100,100,0.6);
+		}
+
+		.progress-bar-clear {
+			background-image: linear-gradient(to bottom,#ebebeb 0,#f5f5f5 100%);
+			box-shadow: inset 0px 2px 6px rgba(100,100,100,0.6);
+		}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Hello!</h1>
+			<nav class="navbar navbar-default">
+				<div class="navbar-header">
+				<span class="navbar-brand">Test</span>
+				</div>
+
+				<div class="collapse navbar-collapse" id="navbar-collapse">
+					<ul class="nav navbar-nav">
+						<li class="active"><a href="#">Home <span class="sr-only">(current)</span></a></li>
+						<li><a href="#">Some other thing</a></li>
+					</ul>
+				</div>
+			</nav>
+			<div class="row">
+				<div class="col-md-3">
+					<h4>Motor Status</h4>
+					<div class="row">
+						<div class="col-md-6" style="margin-top: 40px; padding-top:20px">
+							<div class="progress vertical">
+								<div id="motor-left-clear" class="progress-bar progress-bar-clear" style="width: 50%"></div>
+								<div id="motor-left-actual" class="progress-bar progress-bar-success" style="width: 20%"></div>
+							</div>
+						</div>
+						<div class="col-md-6" style="margin-top: 40px; padding-top: 20px">
+							<div class="progress vertical">
+								<div id="motor-right-clear" class="progress-bar progress-bar-clear" style="width: 40%"></div>
+								<div id="motor-right-actual" class="progress-bar progress-bar-success" style="width: 10%"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-9">
+					<h4>Digital Outputs</h4>
+					<button type="button" id="btnLower">Less</button>
+					<span id="lblSpeed" style="display: inline-block; width: 50px; text-align: center">0</span>
+					<button type="button" id="btnHigher">More</button>
+				</div>
+			</div>
+		</div>
+		
+		<script src="js/jquery.min.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+
+		<script type-"text/javascript">
+		var socket = io();
+
+		function generateProgressBar(speed) {
+			if (speed < -100) speed = -100;
+			if (speed > 100) speed = 100;
+
+			var clear = 0;
+			var actual = 0;
+			if (speed < 0) {
+				clear = 50 - ((-speed / 100) * 50);
+				actual = 50 - clear;
+			}
+			else {
+				clear = 50;
+				actual = (speed / 100) * 50;
+			}
+
+			return {
+				clear: clear,
+				actual: actual
+			}
+		}
+
+		var leftClear = document.getElementById('motor-left-clear');
+		var leftActual = document.getElementById('motor-left-actual');
+		var rightClear = document.getElementById('motor-right-clear');
+		var rightActual = document.getElementById('motor-right-actual');
+
+		var btnLower = document.getElementById('btnLower');
+		var btnHigher = document.getElementById('btnHigher');
+		var lblSpeed = document.getElementById('lblSpeed');
+
+		var motors = {
+			left: {
+				clear: leftClear,
+				actual: leftActual
+			},
+			right: {
+				clear: rightClear,
+				actual: rightActual
+			}
+		}
+
+		var leftSpeed = generateProgressBar(0);
+		var rightSpeed = generateProgressBar(0);
+
+		function updateSpeed(side, speed) {
+			var motor = motors[side];
+			if (!motor) return;
+
+			var speedData = generateProgressBar(speed);
+			motor.clear.style.width = speedData.clear + "%";
+			motor.actual.style.width = speedData.actual + "%";
+		}
+
+		var currSpeed = 0;
+		updateSpeed('left', currSpeed);
+		updateSpeed('right', currSpeed);
+
+		btnLower.addEventListener('click', function () {
+			currSpeed--;
+			if (currSpeed < -100) currSpeed = -100;
+
+			lblSpeed.innerHTML = currSpeed;
+			updateSpeed('left', currSpeed);
+		});
+
+		btnHigher.addEventListener('click', function () {
+			currSpeed++;
+			if (currSpeed > 100) currSpeed = 100;
+
+			lblSpeed.innerHTML = currSpeed;
+			updateSpeed('left', currSpeed);
+		});
+
+		socket.on('robotUpdate', function(data) {
+			console.log(data);
+		});
+		</script>
+	</body>
+</html>
